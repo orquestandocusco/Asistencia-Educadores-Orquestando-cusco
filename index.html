@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Asistencia Orquestando</title>
+
+<!-- 🔥 FIREBASE -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+<style>
+body {
+  font-family: Arial, sans-serif;
+  text-align: center;
+  background-image: url("fondo-orquestando.jpg");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  margin: 0;
+  padding: 0;
+}
+
+.contenedor {
+  background: rgba(255,255,255,0.93);
+  max-width: 1200px;
+  margin: 30px auto;
+  padding: 20px;
+  border-radius: 15px;
+}
+
+.logo {
+  max-width: 320px;
+  margin: 10px auto;
+}
+
+select, input, button {
+  padding: 10px;
+  margin: 6px;
+  font-size: 14px;
+}
+
+button { cursor: pointer; }
+
+.encabezado-semana, .semana {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+
+.encabezado-semana div {
+  font-weight: bold;
+  background: #ddd;
+  padding: 8px;
+  border: 1px solid #bbb;
+}
+
+.dia {
+  border: 1px solid #ccc;
+  min-height: 95px;
+  padding: 6px;
+  font-size: 12px;
+}
+
+.fin-semana { background: #ffe0e0; }
+.entrada { border-left: 6px solid green; }
+.salida { border-left: 6px solid blue; }
+
+.calendario-wrapper {
+  transform: scale(0.67);
+  transform-origin: top center;
+  margin-top: 30px;
+  padding-top: 20px;
+}
+
+/* 🔐 BOTÓN ADMIN */
+.admin-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #000;
+  color: #fff;
+  font-weight: bold;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0.15;
+}
+.admin-btn:hover { opacity: 1; }
+
+/* 🛠 PANEL ADMIN */
+.admin-panel {
+  display: none;
+  background: #f5f5f5;
+  padding: 15px;
+  border-radius: 10px;
+  margin-top: 15px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="contenedor">
+
+  <!-- LOGO + BOTÓN ADMIN -->
+  <div style="position: relative; display: inline-block;">
+    <img src="logo-orquestando.png" class="logo" alt="Orquestando">
+    <div class="admin-btn" onclick="abrirAdmin()">O</div>
+  </div>
+
+  <h1>SISTEMA DE ASISTENCIA – ORQUESTANDO</h1>
+
+  <!-- EDUCADORES -->
+  <select id="educador">
+    <option value="">👤 Seleccione educador</option>
+    <option>Elvis Ylla Uscamayta</option>
+    <option>Nilton Ibarra Vilchez</option>
+    <option>Hector Roberto Galvez Zuñiga</option>
+  </select>
+
+  <input type="password" id="pin" placeholder="🔐 PIN 5 dígitos" maxlength="5">
+  <br>
+
+  <button onclick="marcar('entrada')">🟢 Entrada</button>
+  <button onclick="marcar('salida')">🔵 Salida</button>
+
+  <!-- PANEL ADMIN -->
+  <div class="admin-panel" id="adminPanel">
+    <h3>🔧 MODO ADMINISTRADOR</h3>
+
+    <select id="adminEducador">
+      <option value="">Seleccione educador</option>
+      <option>Elvis Ylla Uscamayta</option>
+      <option>Nilton Ibarra Vilchez</option>
+      <option>Hector Roberto Galvez Zuñiga</option>
+    </select>
+
+    <input type="date" id="adminFecha">
+    <input type="time" id="adminEntrada">
+    <input type="time" id="adminSalida">
+    <br>
+
+    <button onclick="guardarEdicion()">💾 Guardar cambios</button>
+  </div>
+
+  <hr>
+
+  <select id="mes"></select>
+  <select id="anio"></select>
+  <br>
+
+  <button onclick="verAsistencias()">📅 Ver asistencias</button>
+  <button onclick="descargarExcel()">📥 Descargar Excel</button>
+
+  <!-- CALENDARIO -->
+  <div class="calendario-wrapper">
+    <div class="encabezado-semana">
+      <div>SÁB</div><div>DOM</div><div>LUN</div><div>MAR</div>
+      <div>MIÉ</div><div>JUE</div><div>VIE</div>
+    </div>
+    <div id="calendario"></div>
+  </div>
+
+</div>
+
+<script>
+  // 🔥 CONFIGURACIÓN FIREBASE
+  const firebaseConfig = {
+    apiKey: "AIzaSyB5DmQh3_4qOZKejJWP2Ul4MJ2qeV_QYCg",
+    authDomain: "asistencia-orquestando.firebaseapp.com",
+    projectId: "asistencia-orquestando",
+    storageBucket: "asistencia-orquestando.firebasestorage.app",
+    messagingSenderId: "871572030454",
+    appId: "1:871572030454:web:a79ec963141b20e1647dd7",
+    measurementId: "G-1QEC27KMPC"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+
+  /* PINES */
+  const pines = {
+    "Elvis Ylla Uscamayta": "20261",
+    "Nilton Ibarra Vilchez": "20262",
+    "Hector Roberto Galvez Zuñiga": "20263"
+  };
+  const PIN_ADMIN = "99999";
+
+  /* SELECTORES */
+  const mesSel = document.getElementById("mes");
+  const anioSel = document.getElementById("anio");
+  const educadorSel = document.getElementById("educador");
+  const calendario = document.getElementById("calendario");
+  const adminEducador = document.getElementById("adminEducador");
+  const adminFecha = document.getElementById("adminFecha");
+  const adminEntrada = document.getElementById("adminEntrada");
+  const adminSalida = document.getElementById("adminSalida");
+
+  /* MESES Y AÑOS */
+  ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"]
+  .forEach((m,i)=>mesSel.innerHTML+=`<option value="${i}">${m}</option>`);
+
+  for (let y = 2026; y <= 2035; y++) anioSel.innerHTML += `<option>${y}</option>`;
+
+  /* MARCAR ASISTENCIA */
+  async function marcar(tipo) {
+    const educador = educadorSel.value;
+    const pin = document.getElementById("pin").value;
+    if (!educador || pin !== pines[educador]) return alert("Datos incorrectos");
+
+    const hoy = new Date();
+    const fecha = hoy.toISOString().split("T")[0];
+    const hora = hoy.toLocaleTimeString();
+
+    await db.collection("asistencias")
+      .doc(`${educador}-${fecha}`)
+      .set({ [tipo]: hora }, { merge: true });
+
+    alert(`✅ ${tipo} registrada`);
+  }
+
+  /* VER ASISTENCIAS - CALENDARIO CORREGIDO */
+  async function verAsistencias() {
+    calendario.innerHTML = "";
+    const educador = educadorSel.value;
+    if (!educador) return alert("Seleccione educador");
+
+    const anio = parseInt(anioSel.value);
+    const mes = parseInt(mesSel.value);
+
+    const snapshot = await db.collection("asistencias").get();
+    const data = {};
+    snapshot.forEach(doc => data[doc.id] = doc.data());
+
+    const primerDia = new Date(anio, mes, 1);
+    const ultimoDia = new Date(anio, mes + 1, 0).getDate();
+
+    let semana = document.createElement("div");
+    semana.className = "semana";
+    calendario.appendChild(semana);
+
+    // 🔹 Ajuste correcto: calendario empieza en SÁBADO
+    let diaSemana = primerDia.getDay(); // JS 0=domingo
+    diaSemana = (diaSemana + 1) % 7;   // ✅ ahora jueves se alinea correctamente
+
+    // 🔹 Celdas vacías antes del primer día
+    for (let i = 0; i < diaSemana; i++) {
+      const vacio = document.createElement("div");
+      vacio.className = "dia";
+      semana.appendChild(vacio);
+    }
+
+    // 🔹 Agregar los días del mes
+    for (let d = 1; d <= ultimoDia; d++) {
+      const fecha = new Date(anio, mes, d);
+      const key = `${educador}-${fecha.toISOString().split("T")[0]}`;
+      const r = data[key] || {};
+
+      const div = document.createElement("div");
+      div.className = "dia";
+      if ([0,6].includes(fecha.getDay())) div.classList.add("fin-semana");
+      if (r.entrada) div.classList.add("entrada");
+      if (r.salida) div.classList.add("salida");
+
+      div.innerHTML = `<strong>${d}</strong><br>
+        ${r.entrada ? "🟢 "+r.entrada : ""}
+        ${r.salida ? "<br>🔵 "+r.salida : ""}`;
+
+      semana.appendChild(div);
+
+      // 🔹 Nueva fila cada 7 días
+      const diaCalendario = (fecha.getDay() + 1) % 7;
+      if (diaCalendario === 6 && d !== ultimoDia) {
+        semana = document.createElement("div");
+        semana.className = "semana";
+        calendario.appendChild(semana);
+      }
+    }
+  }
+
+  /* ADMIN */
+  function abrirAdmin() {
+    const pin = prompt("PIN ADMIN");
+    if (pin === PIN_ADMIN)
+      document.getElementById("adminPanel").style.display = "block";
+    else alert("PIN incorrecto");
+  }
+
+  async function guardarEdicion() {
+    const e = adminEducador.value;
+    const f = adminFecha.value;
+    if (!e || !f) return alert("Complete datos");
+
+    await db.collection("asistencias")
+      .doc(`${e}-${f}`)
+      .set({
+        entrada: adminEntrada.value,
+        salida: adminSalida.value
+      }, { merge: true });
+
+    alert("Registro actualizado");
+  }
+
+  /* DESCARGAR EXCEL */
+  async function descargarExcel() {
+    let csv = "Educador,Fecha,Entrada,Salida\n";
+    const snap = await db.collection("asistencias").get();
+
+    snap.forEach(doc => {
+      const id = doc.id;
+      const fecha = id.match(/\d{4}-\d{2}-\d{2}$/)[0];
+      const educador = id.replace("-"+fecha,"");
+      const r = doc.data();
+      csv += `${educador},${fecha},${r.entrada||""},${r.salida||""}\n`;
+    });
+
+    const blob = new Blob([csv], { type: "text/csv" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "asistencias_orquestando.csv";
+    a.click();
+  }
+</script>
+
+</body>
+</html>
