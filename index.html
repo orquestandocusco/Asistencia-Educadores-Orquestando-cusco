@@ -121,12 +121,13 @@ button { cursor: pointer; }
     <option>Hector Roberto Galvez Zuñiga</option>
   </select>
 
-  <input type="password" id="pin" placeholder="🔐 PIN 5 dígitos" maxlength="5"><br>
+  <input type="password" id="pin" placeholder="🔐 PIN 5 dígitos" maxlength="5">
+  <br>
 
   <button onclick="marcar('entrada')">🟢 Entrada</button>
   <button onclick="marcar('salida')">🔵 Salida</button>
 
-  <!-- 🔧 PANEL ADMIN -->
+  <!-- PANEL ADMIN -->
   <div class="admin-panel" id="adminPanel">
     <h3>🔧 MODO ADMINISTRADOR</h3>
 
@@ -138,10 +139,9 @@ button { cursor: pointer; }
     </select>
 
     <input type="date" id="adminFecha">
-
-    <!-- ✅ AHORA CON SEGUNDOS -->
-    <input type="time" id="adminEntrada" step="1">
-    <input type="time" id="adminSalida" step="1"><br>
+    <input type="time" id="adminEntrada">
+    <input type="time" id="adminSalida">
+    <br>
 
     <button onclick="guardarEdicion()">💾 Guardar cambios</button>
   </div>
@@ -149,7 +149,8 @@ button { cursor: pointer; }
   <hr>
 
   <select id="mes"></select>
-  <select id="anio"></select><br>
+  <select id="anio"></select>
+  <br>
 
   <button onclick="verAsistencias()">📅 Ver asistencias</button>
   <button onclick="descargarExcel()">📥 Descargar Excel</button>
@@ -196,21 +197,22 @@ const adminFecha = document.getElementById("adminFecha");
 const adminEntrada = document.getElementById("adminEntrada");
 const adminSalida = document.getElementById("adminSalida");
 
-/* MESES Y AÑOS */
+/* MESES */
 ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"]
 .forEach((m,i)=>mesSel.innerHTML+=`<option value="${i}">${m}</option>`);
 
-for (let y = 2026; y <= 2035; y++) anioSel.innerHTML += `<option>${y}</option>`;
+/* AÑOS */
+for (let y = 2025; y <= 2035; y++) anioSel.innerHTML += `<option>${y}</option>`;
 
-/* MARCAR NORMAL */
+/* MARCAR ASISTENCIA */
 async function marcar(tipo) {
   const educador = educadorSel.value;
   const pin = document.getElementById("pin").value;
   if (!educador || pin !== pines[educador]) return alert("Datos incorrectos");
 
-  const ahora = new Date();
-  const fecha = ahora.toISOString().split("T")[0];
-  const hora = ahora.toLocaleTimeString("es-PE", {
+  const hoy = new Date();
+  const fecha = hoy.toISOString().split("T")[0];
+  const hora = hoy.toLocaleTimeString("es-PE", {
     hour: "numeric",
     minute: "2-digit",
     second: "2-digit",
@@ -224,18 +226,12 @@ async function marcar(tipo) {
   alert(`✅ ${tipo} registrada`);
 }
 
-/* ✅ FORMATO HORA ADMIN CON SEGUNDOS */
+/* FORMATO HORA ADMIN */
 function formatearHoraAdmin(hora24) {
   if (!hora24) return "";
-
-  const partes = hora24.split(":");
-  const h = Number(partes[0]);
-  const m = Number(partes[1]);
-  const s = Number(partes[2] || 0);
-
+  const [h, m] = hora24.split(":").map(Number);
   const d = new Date();
-  d.setHours(h, m, s);
-
+  d.setHours(h, m, 0);
   return d.toLocaleTimeString("es-PE", {
     hour: "numeric",
     minute: "2-digit",
@@ -267,16 +263,21 @@ async function guardarEdicion() {
   alert("Registro actualizado");
 }
 
-/* VER ASISTENCIAS */
+/* 📅 VER ASISTENCIAS (CORREGIDO) */
 async function verAsistencias() {
   calendario.innerHTML = "";
+
   const educador = educadorSel.value;
   if (!educador) return alert("Seleccione educador");
 
   const anio = parseInt(anioSel.value);
   const mes = parseInt(mesSel.value);
 
-  const snapshot = await db.collection("asistencias").get();
+  const ref = db.collection("asistencias")
+    .where(firebase.firestore.FieldPath.documentId(), ">=", educador + "-")
+    .where(firebase.firestore.FieldPath.documentId(), "<", educador + "-\uf8ff");
+
+  const snapshot = await ref.get();
   const data = {};
   snapshot.forEach(doc => data[doc.id] = doc.data());
 
@@ -287,8 +288,8 @@ async function verAsistencias() {
   semana.className = "semana";
   calendario.appendChild(semana);
 
-  let offset = (primerDia.getDay() + 1) % 7;
-  for (let i = 0; i < offset; i++) semana.appendChild(document.createElement("div"));
+  let diaSemana = (primerDia.getDay() + 1) % 7;
+  for (let i = 0; i < diaSemana; i++) semana.appendChild(document.createElement("div"));
 
   for (let d = 1; d <= ultimoDia; d++) {
     const fecha = new Date(anio, mes, d);
@@ -315,7 +316,7 @@ async function verAsistencias() {
   }
 }
 
-/* EXCEL */
+/* 📥 EXCEL */
 async function descargarExcel() {
   let csv = "Educador,Fecha,Entrada,Salida\n";
   const snap = await db.collection("asistencias").get();
