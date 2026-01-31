@@ -108,7 +108,7 @@ button { cursor: pointer; }
 <div class="contenedor">
 
   <div style="position: relative; display: inline-block;">
-    <img src="logo-orquestando.png" class="logo" alt="Orquestando">
+    <img src="logo-orquestando.png" class="logo">
     <div class="admin-btn" onclick="abrirAdmin()">O</div>
   </div>
 
@@ -121,13 +121,12 @@ button { cursor: pointer; }
     <option>Hector Roberto Galvez Zuñiga</option>
   </select>
 
-  <input type="password" id="pin" placeholder="🔐 PIN 5 dígitos" maxlength="5">
-  <br>
+  <input type="password" id="pin" placeholder="🔐 PIN 5 dígitos" maxlength="5"><br>
 
   <button onclick="marcar('entrada')">🟢 Entrada</button>
   <button onclick="marcar('salida')">🔵 Salida</button>
 
-  <!-- PANEL ADMIN -->
+  <!-- 🔧 PANEL ADMIN -->
   <div class="admin-panel" id="adminPanel">
     <h3>🔧 MODO ADMINISTRADOR</h3>
 
@@ -139,9 +138,10 @@ button { cursor: pointer; }
     </select>
 
     <input type="date" id="adminFecha">
-    <input type="time" id="adminEntrada">
-    <input type="time" id="adminSalida">
-    <br>
+
+    <!-- ✅ AHORA CON SEGUNDOS -->
+    <input type="time" id="adminEntrada" step="1">
+    <input type="time" id="adminSalida" step="1"><br>
 
     <button onclick="guardarEdicion()">💾 Guardar cambios</button>
   </div>
@@ -149,8 +149,7 @@ button { cursor: pointer; }
   <hr>
 
   <select id="mes"></select>
-  <select id="anio"></select>
-  <br>
+  <select id="anio"></select><br>
 
   <button onclick="verAsistencias()">📅 Ver asistencias</button>
   <button onclick="descargarExcel()">📥 Descargar Excel</button>
@@ -173,8 +172,7 @@ const firebaseConfig = {
   projectId: "asistencia-orquestando",
   storageBucket: "asistencia-orquestando.firebasestorage.app",
   messagingSenderId: "871572030454",
-  appId: "1:871572030454:web:a79ec963141b20e1647dd7",
-  measurementId: "G-1QEC27KMPC"
+  appId: "1:871572030454:web:a79ec963141b20e1647dd7"
 };
 
 firebase.initializeApp(firebaseConfig);
@@ -210,9 +208,9 @@ async function marcar(tipo) {
   const pin = document.getElementById("pin").value;
   if (!educador || pin !== pines[educador]) return alert("Datos incorrectos");
 
-  const hoy = new Date();
-  const fecha = hoy.toISOString().split("T")[0];
-  const hora = hoy.toLocaleTimeString("es-PE", {
+  const ahora = new Date();
+  const fecha = ahora.toISOString().split("T")[0];
+  const hora = ahora.toLocaleTimeString("es-PE", {
     hour: "numeric",
     minute: "2-digit",
     second: "2-digit",
@@ -226,12 +224,17 @@ async function marcar(tipo) {
   alert(`✅ ${tipo} registrada`);
 }
 
-/* 🔧 FUNCIÓN NUEVA → FORMATO DE HORA ADMIN */
+/* ✅ FORMATO HORA ADMIN CON SEGUNDOS */
 function formatearHoraAdmin(hora24) {
   if (!hora24) return "";
-  const [h, m] = hora24.split(":").map(Number);
+
+  const partes = hora24.split(":");
+  const h = Number(partes[0]);
+  const m = Number(partes[1]);
+  const s = Number(partes[2] || 0);
+
   const d = new Date();
-  d.setHours(h, m, 0);
+  d.setHours(h, m, s);
 
   return d.toLocaleTimeString("es-PE", {
     hour: "numeric",
@@ -284,11 +287,8 @@ async function verAsistencias() {
   semana.className = "semana";
   calendario.appendChild(semana);
 
-  let diaSemana = (primerDia.getDay() + 1) % 7;
-
-  for (let i = 0; i < diaSemana; i++) {
-    semana.appendChild(document.createElement("div"));
-  }
+  let offset = (primerDia.getDay() + 1) % 7;
+  for (let i = 0; i < offset; i++) semana.appendChild(document.createElement("div"));
 
   for (let d = 1; d <= ultimoDia; d++) {
     const fecha = new Date(anio, mes, d);
@@ -302,8 +302,8 @@ async function verAsistencias() {
     if (r.salida) div.classList.add("salida");
 
     div.innerHTML = `<strong>${d}</strong><br>
-      ${r.entrada ? "🟢 "+r.entrada : ""}
-      ${r.salida ? "<br>🔵 "+r.salida : ""}`;
+      ${r.entrada ? "🟢 " + r.entrada : ""}
+      ${r.salida ? "<br>🔵 " + r.salida : ""}`;
 
     semana.appendChild(div);
 
