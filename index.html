@@ -107,7 +107,6 @@ button { cursor: pointer; }
 
 <div class="contenedor">
 
-  <!-- LOGO + BOTÓN ADMIN -->
   <div style="position: relative; display: inline-block;">
     <img src="logo-orquestando.png" class="logo" alt="Orquestando">
     <div class="admin-btn" onclick="abrirAdmin()">O</div>
@@ -115,7 +114,6 @@ button { cursor: pointer; }
 
   <h1>SISTEMA DE ASISTENCIA – ORQUESTANDO</h1>
 
-  <!-- EDUCADORES -->
   <select id="educador">
     <option value="">👤 Seleccione educador</option>
     <option>Elvis Ylla Uscamayta</option>
@@ -157,7 +155,6 @@ button { cursor: pointer; }
   <button onclick="verAsistencias()">📅 Ver asistencias</button>
   <button onclick="descargarExcel()">📥 Descargar Excel</button>
 
-  <!-- CALENDARIO -->
   <div class="calendario-wrapper">
     <div class="encabezado-semana">
       <div>SÁB</div><div>DOM</div><div>LUN</div><div>MAR</div>
@@ -169,162 +166,174 @@ button { cursor: pointer; }
 </div>
 
 <script>
-  // 🔥 CONFIGURACIÓN FIREBASE
-  const firebaseConfig = {
-    apiKey: "AIzaSyB5DmQh3_4qOZKejJWP2Ul4MJ2qeV_QYCg",
-    authDomain: "asistencia-orquestando.firebaseapp.com",
-    projectId: "asistencia-orquestando",
-    storageBucket: "asistencia-orquestando.firebasestorage.app",
-    messagingSenderId: "871572030454",
-    appId: "1:871572030454:web:a79ec963141b20e1647dd7",
-    measurementId: "G-1QEC27KMPC"
-  };
+/* 🔥 FIREBASE */
+const firebaseConfig = {
+  apiKey: "AIzaSyB5DmQh3_4qOZKejJWP2Ul4MJ2qeV_QYCg",
+  authDomain: "asistencia-orquestando.firebaseapp.com",
+  projectId: "asistencia-orquestando",
+  storageBucket: "asistencia-orquestando.firebasestorage.app",
+  messagingSenderId: "871572030454",
+  appId: "1:871572030454:web:a79ec963141b20e1647dd7",
+  measurementId: "G-1QEC27KMPC"
+};
 
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.firestore();
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
 
-  /* PINES */
-  const pines = {
-    "Elvis Ylla Uscamayta": "20261",
-    "Nilton Ibarra Vilchez": "20262",
-    "Hector Roberto Galvez Zuñiga": "20263"
-  };
-  const PIN_ADMIN = "99999";
+/* PINES */
+const pines = {
+  "Elvis Ylla Uscamayta": "20261",
+  "Nilton Ibarra Vilchez": "20262",
+  "Hector Roberto Galvez Zuñiga": "20263"
+};
+const PIN_ADMIN = "99999";
 
-  /* SELECTORES */
-  const mesSel = document.getElementById("mes");
-  const anioSel = document.getElementById("anio");
-  const educadorSel = document.getElementById("educador");
-  const calendario = document.getElementById("calendario");
-  const adminEducador = document.getElementById("adminEducador");
-  const adminFecha = document.getElementById("adminFecha");
-  const adminEntrada = document.getElementById("adminEntrada");
-  const adminSalida = document.getElementById("adminSalida");
+/* SELECTORES */
+const mesSel = document.getElementById("mes");
+const anioSel = document.getElementById("anio");
+const educadorSel = document.getElementById("educador");
+const calendario = document.getElementById("calendario");
+const adminEducador = document.getElementById("adminEducador");
+const adminFecha = document.getElementById("adminFecha");
+const adminEntrada = document.getElementById("adminEntrada");
+const adminSalida = document.getElementById("adminSalida");
 
-  /* MESES Y AÑOS */
-  ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"]
-  .forEach((m,i)=>mesSel.innerHTML+=`<option value="${i}">${m}</option>`);
+/* MESES Y AÑOS */
+["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"]
+.forEach((m,i)=>mesSel.innerHTML+=`<option value="${i}">${m}</option>`);
 
-  for (let y = 2026; y <= 2035; y++) anioSel.innerHTML += `<option>${y}</option>`;
+for (let y = 2026; y <= 2035; y++) anioSel.innerHTML += `<option>${y}</option>`;
 
-  /* MARCAR ASISTENCIA */
-  async function marcar(tipo) {
-    const educador = educadorSel.value;
-    const pin = document.getElementById("pin").value;
-    if (!educador || pin !== pines[educador]) return alert("Datos incorrectos");
+/* MARCAR NORMAL */
+async function marcar(tipo) {
+  const educador = educadorSel.value;
+  const pin = document.getElementById("pin").value;
+  if (!educador || pin !== pines[educador]) return alert("Datos incorrectos");
 
-    const hoy = new Date();
-    const fecha = hoy.toISOString().split("T")[0];
-    const hora = hoy.toLocaleTimeString();
+  const hoy = new Date();
+  const fecha = hoy.toISOString().split("T")[0];
+  const hora = hoy.toLocaleTimeString("es-PE", {
+    hour: "numeric",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true
+  });
 
-    await db.collection("asistencias")
-      .doc(`${educador}-${fecha}`)
-      .set({ [tipo]: hora }, { merge: true });
+  await db.collection("asistencias")
+    .doc(`${educador}-${fecha}`)
+    .set({ [tipo]: hora }, { merge: true });
 
-    alert(`✅ ${tipo} registrada`);
+  alert(`✅ ${tipo} registrada`);
+}
+
+/* 🔧 FUNCIÓN NUEVA → FORMATO DE HORA ADMIN */
+function formatearHoraAdmin(hora24) {
+  if (!hora24) return "";
+  const [h, m] = hora24.split(":").map(Number);
+  const d = new Date();
+  d.setHours(h, m, 0);
+
+  return d.toLocaleTimeString("es-PE", {
+    hour: "numeric",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true
+  });
+}
+
+/* ADMIN */
+function abrirAdmin() {
+  const pin = prompt("PIN ADMIN");
+  if (pin === PIN_ADMIN)
+    document.getElementById("adminPanel").style.display = "block";
+  else alert("PIN incorrecto");
+}
+
+async function guardarEdicion() {
+  const e = adminEducador.value;
+  const f = adminFecha.value;
+  if (!e || !f) return alert("Complete datos");
+
+  await db.collection("asistencias")
+    .doc(`${e}-${f}`)
+    .set({
+      entrada: formatearHoraAdmin(adminEntrada.value),
+      salida: formatearHoraAdmin(adminSalida.value)
+    }, { merge: true });
+
+  alert("Registro actualizado");
+}
+
+/* VER ASISTENCIAS */
+async function verAsistencias() {
+  calendario.innerHTML = "";
+  const educador = educadorSel.value;
+  if (!educador) return alert("Seleccione educador");
+
+  const anio = parseInt(anioSel.value);
+  const mes = parseInt(mesSel.value);
+
+  const snapshot = await db.collection("asistencias").get();
+  const data = {};
+  snapshot.forEach(doc => data[doc.id] = doc.data());
+
+  const primerDia = new Date(anio, mes, 1);
+  const ultimoDia = new Date(anio, mes + 1, 0).getDate();
+
+  let semana = document.createElement("div");
+  semana.className = "semana";
+  calendario.appendChild(semana);
+
+  let diaSemana = (primerDia.getDay() + 1) % 7;
+
+  for (let i = 0; i < diaSemana; i++) {
+    semana.appendChild(document.createElement("div"));
   }
 
-  /* VER ASISTENCIAS - CALENDARIO CORREGIDO */
-  async function verAsistencias() {
-    calendario.innerHTML = "";
-    const educador = educadorSel.value;
-    if (!educador) return alert("Seleccione educador");
+  for (let d = 1; d <= ultimoDia; d++) {
+    const fecha = new Date(anio, mes, d);
+    const key = `${educador}-${fecha.toISOString().split("T")[0]}`;
+    const r = data[key] || {};
 
-    const anio = parseInt(anioSel.value);
-    const mes = parseInt(mesSel.value);
+    const div = document.createElement("div");
+    div.className = "dia";
+    if ([0,6].includes(fecha.getDay())) div.classList.add("fin-semana");
+    if (r.entrada) div.classList.add("entrada");
+    if (r.salida) div.classList.add("salida");
 
-    const snapshot = await db.collection("asistencias").get();
-    const data = {};
-    snapshot.forEach(doc => data[doc.id] = doc.data());
+    div.innerHTML = `<strong>${d}</strong><br>
+      ${r.entrada ? "🟢 "+r.entrada : ""}
+      ${r.salida ? "<br>🔵 "+r.salida : ""}`;
 
-    const primerDia = new Date(anio, mes, 1);
-    const ultimoDia = new Date(anio, mes + 1, 0).getDate();
+    semana.appendChild(div);
 
-    let semana = document.createElement("div");
-    semana.className = "semana";
-    calendario.appendChild(semana);
-
-    // 🔹 Ajuste correcto: calendario empieza en SÁBADO
-    let diaSemana = primerDia.getDay(); // JS 0=domingo
-    diaSemana = (diaSemana + 1) % 7;   // ✅ ahora jueves se alinea correctamente
-
-    // 🔹 Celdas vacías antes del primer día
-    for (let i = 0; i < diaSemana; i++) {
-      const vacio = document.createElement("div");
-      vacio.className = "dia";
-      semana.appendChild(vacio);
+    if ((fecha.getDay()+1)%7 === 6 && d !== ultimoDia) {
+      semana = document.createElement("div");
+      semana.className = "semana";
+      calendario.appendChild(semana);
     }
-
-    // 🔹 Agregar los días del mes
-    for (let d = 1; d <= ultimoDia; d++) {
-      const fecha = new Date(anio, mes, d);
-      const key = `${educador}-${fecha.toISOString().split("T")[0]}`;
-      const r = data[key] || {};
-
-      const div = document.createElement("div");
-      div.className = "dia";
-      if ([0,6].includes(fecha.getDay())) div.classList.add("fin-semana");
-      if (r.entrada) div.classList.add("entrada");
-      if (r.salida) div.classList.add("salida");
-
-      div.innerHTML = `<strong>${d}</strong><br>
-        ${r.entrada ? "🟢 "+r.entrada : ""}
-        ${r.salida ? "<br>🔵 "+r.salida : ""}`;
-
-      semana.appendChild(div);
-
-      // 🔹 Nueva fila cada 7 días
-      const diaCalendario = (fecha.getDay() + 1) % 7;
-      if (diaCalendario === 6 && d !== ultimoDia) {
-        semana = document.createElement("div");
-        semana.className = "semana";
-        calendario.appendChild(semana);
-      }
-    }
   }
+}
 
-  /* ADMIN */
-  function abrirAdmin() {
-    const pin = prompt("PIN ADMIN");
-    if (pin === PIN_ADMIN)
-      document.getElementById("adminPanel").style.display = "block";
-    else alert("PIN incorrecto");
-  }
+/* EXCEL */
+async function descargarExcel() {
+  let csv = "Educador,Fecha,Entrada,Salida\n";
+  const snap = await db.collection("asistencias").get();
 
-  async function guardarEdicion() {
-    const e = adminEducador.value;
-    const f = adminFecha.value;
-    if (!e || !f) return alert("Complete datos");
+  snap.forEach(doc => {
+    const id = doc.id;
+    const fecha = id.match(/\d{4}-\d{2}-\d{2}$/)[0];
+    const educador = id.replace("-"+fecha,"");
+    const r = doc.data();
+    csv += `${educador},${fecha},${r.entrada||""},${r.salida||""}\n`;
+  });
 
-    await db.collection("asistencias")
-      .doc(`${e}-${f}`)
-      .set({
-        entrada: adminEntrada.value,
-        salida: adminSalida.value
-      }, { merge: true });
-
-    alert("Registro actualizado");
-  }
-
-  /* DESCARGAR EXCEL */
-  async function descargarExcel() {
-    let csv = "Educador,Fecha,Entrada,Salida\n";
-    const snap = await db.collection("asistencias").get();
-
-    snap.forEach(doc => {
-      const id = doc.id;
-      const fecha = id.match(/\d{4}-\d{2}-\d{2}$/)[0];
-      const educador = id.replace("-"+fecha,"");
-      const r = doc.data();
-      csv += `${educador},${fecha},${r.entrada||""},${r.salida||""}\n`;
-    });
-
-    const blob = new Blob([csv], { type: "text/csv" });
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "asistencias_orquestando.csv";
-    a.click();
-  }
+  const blob = new Blob([csv], { type: "text/csv" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "asistencias_orquestando.csv";
+  a.click();
+}
 </script>
 
 </body>
