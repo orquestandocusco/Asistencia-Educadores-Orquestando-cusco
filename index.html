@@ -62,11 +62,14 @@ button { cursor: pointer; }
 }
 
 .fin-semana { background: #ffe0e0; }
-.entrada { border-left: 6px solid green; }
-.salida { border-left: 6px solid blue; }
-.permiso { border-left: 6px solid orange; }
-.falta { border-left: 6px solid red; }
-.salud { border-left: 6px solid purple; }
+
+/* ✅ CLASES CORREGIDAS */
+.Entrada { border-left: 6px solid green; }
+.Salida { border-left: 6px solid blue; }
+.Permiso { border-left: 6px solid orange; }
+.TrabajoRemoto { border-left: 6px solid purple; }
+.Falta { border-left: 6px solid red; }
+.Salud { border-left: 6px solid deepskyblue; }
 
 .calendario-wrapper {
   transform: scale(0.67);
@@ -145,12 +148,12 @@ button { cursor: pointer; }
     <input type="time" id="adminEntrada" step="1">
     <input type="time" id="adminSalida" step="1"><br>
 
-    <!-- ✅ ESTADOS AGREGADOS -->
     <select id="adminEstado">
       <option value="">— Estado especial —</option>
-      <option value="permiso">🟠 Permiso</option>
-      <option value="falta">🔴 Falta injustificada</option>
-      <option value="salud">🟣 Permiso por salud</option>
+      <option value="Permiso">🟠 Permiso</option>
+      <option value="Trabajo Remoto">🟣 Trabajo Remoto</option>
+      <option value="Falta">🔴 Falta injustificada</option>
+      <option value="Salud">🟦 Permiso por salud</option>
     </select><br>
 
     <button onclick="guardarEdicion()">💾 Guardar cambios</button>
@@ -235,7 +238,7 @@ async function marcar(tipo) {
   alert(`✅ ${tipo} registrada`);
 }
 
-/* FORMATO HORA */
+/* FORMATO HORA ADMIN */
 function formatearHoraAdmin(h) {
   if (!h) return "";
   const [hh,mm,ss="00"] = h.split(":");
@@ -297,15 +300,17 @@ async function verAsistencias() {
 
     const div = document.createElement("div");
     div.className = "dia";
+
     if ([0,6].includes(fecha.getDay())) div.classList.add("fin-semana");
-    if (r.estado) div.classList.add(r.estado);
-    if (r.entrada) div.classList.add("entrada");
-    if (r.salida) div.classList.add("salida");
+    if (r.estado) div.classList.add(r.estado.replace(" ", ""));
+    if (r.entrada) div.classList.add("Entrada");
+    if (r.salida) div.classList.add("Salida");
 
     let texto = "";
-    if (r.estado === "permiso") texto = "🟠 Permiso";
-    if (r.estado === "falta") texto = "🔴 Falta injustificada";
-    if (r.estado === "salud") texto = "🟣 Permiso por salud";
+    if (r.estado === "Permiso") texto = "🟠 Permiso";
+    if (r.estado === "Trabajo Remoto") texto = "🟣 Trabajo Remoto";
+    if (r.estado === "Falta") texto = "🔴 Falta injustificada";
+    if (r.estado === "Salud") texto = "🟦 Permiso por salud";
 
     div.innerHTML = `<strong>${d}</strong><br>
       ${texto}
