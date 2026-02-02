@@ -14,11 +14,7 @@ body {
   text-align: center;
   background-image: url("fondo-orquestando.jpg");
   background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
   background-attachment: fixed;
-  margin: 0;
-  padding: 0;
 }
 
 .contenedor {
@@ -29,18 +25,12 @@ body {
   border-radius: 15px;
 }
 
-.logo {
-  max-width: 320px;
-  margin: 10px auto;
-}
+.logo { max-width: 320px; }
 
 select, input, button {
   padding: 10px;
   margin: 6px;
-  font-size: 14px;
 }
-
-button { cursor: pointer; }
 
 .encabezado-semana, .semana {
   display: grid;
@@ -48,57 +38,45 @@ button { cursor: pointer; }
 }
 
 .encabezado-semana div {
-  font-weight: bold;
   background: #ddd;
+  font-weight: bold;
   padding: 8px;
-  border: 1px solid #bbb;
 }
 
 .dia {
   border: 1px solid #ccc;
   min-height: 95px;
-  padding: 6px;
   font-size: 12px;
+  padding: 5px;
 }
 
 .fin-semana { background: #ffe0e0; }
+
 .entrada { border-left: 6px solid green; }
 .salida { border-left: 6px solid blue; }
+.permiso { border-left: 6px solid orange; }
+.falta { border-left: 6px solid red; }
+.salud { border-left: 6px solid purple; }
 
-.calendario-wrapper {
-  transform: scale(0.67);
-  transform-origin: top center;
-  margin-top: 30px;
-  padding-top: 20px;
-}
-
-/* 🔐 BOTÓN ADMIN */
 .admin-btn {
   position: absolute;
   top: 20px;
   right: 20px;
-  width: 38px;
-  height: 38px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
-  background: #000;
-  color: #fff;
-  font-weight: bold;
-  font-size: 18px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  background: black;
+  color: white;
   cursor: pointer;
-  opacity: 0.15;
+  opacity: 0.2;
 }
 .admin-btn:hover { opacity: 1; }
 
-/* 🛠 PANEL ADMIN */
 .admin-panel {
   display: none;
   background: #f5f5f5;
   padding: 15px;
   border-radius: 10px;
-  margin-top: 15px;
 }
 </style>
 </head>
@@ -107,75 +85,75 @@ button { cursor: pointer; }
 
 <div class="contenedor">
 
-  <div style="position: relative; display: inline-block;">
+  <div style="position: relative;">
     <img src="logo-orquestando.png" class="logo">
     <div class="admin-btn" onclick="abrirAdmin()">O</div>
   </div>
 
-  <h1>SISTEMA DE ASISTENCIA – ORQUESTANDO</h1>
+  <h2>SISTEMA DE ASISTENCIA – ORQUESTANDO</h2>
 
   <select id="educador">
-    <option value="">👤 Seleccione educador</option>
+    <option value="">Seleccione educador</option>
     <option>Elvis Ylla Uscamayta</option>
     <option>Nilton Ibarra Vilchez</option>
     <option>Hector Roberto Galvez Zuñiga</option>
   </select>
 
-  <input type="password" id="pin" placeholder="🔐 PIN 5 dígitos" maxlength="5"><br>
+  <input type="password" id="pin" placeholder="PIN">
+  <br>
 
   <button onclick="marcar('entrada')">🟢 Entrada</button>
   <button onclick="marcar('salida')">🔵 Salida</button>
 
-  <!-- 🔧 PANEL ADMIN -->
-  <div class="admin-panel" id="adminPanel">
-    <h3>🔧 MODO ADMINISTRADOR</h3>
+  <!-- ADMIN -->
+  <div id="adminPanel" class="admin-panel">
+    <h3>MODO ADMIN</h3>
 
     <select id="adminEducador">
-      <option value="">Seleccione educador</option>
+      <option value="">Educador</option>
       <option>Elvis Ylla Uscamayta</option>
       <option>Nilton Ibarra Vilchez</option>
       <option>Hector Roberto Galvez Zuñiga</option>
     </select>
 
-    <input type="date" id="adminFecha">
+    <input type="date" id="adminFecha"><br>
 
-    <!-- ✅ AHORA CON SEGUNDOS -->
-    <input type="time" id="adminEntrada" step="1">
-    <input type="time" id="adminSalida" step="1"><br>
+    <input type="time" id="adminEntrada">
+    <input type="time" id="adminSalida"><br>
 
-    <button onclick="guardarEdicion()">💾 Guardar cambios</button>
+    <select id="adminEstado">
+      <option value="">Estado especial</option>
+      <option value="permiso">🟠 Permiso</option>
+      <option value="falta">🔴 Falta injustificada</option>
+      <option value="salud">🟣 Permiso por salud</option>
+    </select><br>
+
+    <button onclick="guardarAdmin()">💾 Guardar</button>
   </div>
 
   <hr>
 
   <select id="mes"></select>
-  <select id="anio"></select><br>
+  <select id="anio"></select>
+  <br>
 
   <button onclick="verAsistencias()">📅 Ver asistencias</button>
-  <button onclick="descargarExcel()">📥 Descargar Excel</button>
 
-  <div class="calendario-wrapper">
-    <div class="encabezado-semana">
-      <div>SÁB</div><div>DOM</div><div>LUN</div><div>MAR</div>
-      <div>MIÉ</div><div>JUE</div><div>VIE</div>
-    </div>
-    <div id="calendario"></div>
+  <div class="encabezado-semana">
+    <div>SÁB</div><div>DOM</div><div>LUN</div><div>MAR</div>
+    <div>MIÉ</div><div>JUE</div><div>VIE</div>
   </div>
+  <div id="calendario"></div>
 
 </div>
 
 <script>
-/* 🔥 FIREBASE */
-const firebaseConfig = {
+/* FIREBASE */
+firebase.initializeApp({
   apiKey: "AIzaSyB5DmQh3_4qOZKejJWP2Ul4MJ2qeV_QYCg",
   authDomain: "asistencia-orquestando.firebaseapp.com",
-  projectId: "asistencia-orquestando",
-  storageBucket: "asistencia-orquestando.firebasestorage.app",
-  messagingSenderId: "871572030454",
-  appId: "1:871572030454:web:a79ec963141b20e1647dd7"
-};
-
-firebase.initializeApp(firebaseConfig);
+  projectId: "asistencia-orquestando"
+});
 const db = firebase.firestore();
 
 /* PINES */
@@ -189,150 +167,84 @@ const PIN_ADMIN = "99999";
 /* SELECTORES */
 const mesSel = document.getElementById("mes");
 const anioSel = document.getElementById("anio");
-const educadorSel = document.getElementById("educador");
 const calendario = document.getElementById("calendario");
-const adminEducador = document.getElementById("adminEducador");
-const adminFecha = document.getElementById("adminFecha");
-const adminEntrada = document.getElementById("adminEntrada");
-const adminSalida = document.getElementById("adminSalida");
 
-/* MESES Y AÑOS */
+/* MESES */
 ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"]
 .forEach((m,i)=>mesSel.innerHTML+=`<option value="${i}">${m}</option>`);
-
-for (let y = 2026; y <= 2035; y++) anioSel.innerHTML += `<option>${y}</option>`;
+for(let y=2025;y<=2035;y++) anioSel.innerHTML+=`<option>${y}</option>`;
 
 /* MARCAR NORMAL */
-async function marcar(tipo) {
-  const educador = educadorSel.value;
-  const pin = document.getElementById("pin").value;
-  if (!educador || pin !== pines[educador]) return alert("Datos incorrectos");
+async function marcar(tipo){
+  const e = educador.value;
+  if(pin.value !== pines[e]) return alert("PIN incorrecto");
 
-  const ahora = new Date();
-  const fecha = ahora.toISOString().split("T")[0];
-  const hora = ahora.toLocaleTimeString("es-PE", {
-    hour: "numeric",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: true
-  });
+  const f = new Date().toISOString().split("T")[0];
+  const h = new Date().toLocaleTimeString("es-PE",{hour12:true});
 
-  await db.collection("asistencias")
-    .doc(`${educador}-${fecha}`)
-    .set({ [tipo]: hora }, { merge: true });
+  await db.collection("asistencias").doc(`${e}-${f}`).set({
+    [tipo]: h,
+    estado: null
+  },{merge:true});
 
-  alert(`✅ ${tipo} registrada`);
-}
-
-/* ✅ FORMATO HORA ADMIN CON SEGUNDOS */
-function formatearHoraAdmin(hora24) {
-  if (!hora24) return "";
-
-  const partes = hora24.split(":");
-  const h = Number(partes[0]);
-  const m = Number(partes[1]);
-  const s = Number(partes[2] || 0);
-
-  const d = new Date();
-  d.setHours(h, m, s);
-
-  return d.toLocaleTimeString("es-PE", {
-    hour: "numeric",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: true
-  });
+  alert("Registrado");
 }
 
 /* ADMIN */
-function abrirAdmin() {
-  const pin = prompt("PIN ADMIN");
-  if (pin === PIN_ADMIN)
-    document.getElementById("adminPanel").style.display = "block";
-  else alert("PIN incorrecto");
+function abrirAdmin(){
+  if(prompt("PIN ADMIN")===PIN_ADMIN)
+    adminPanel.style.display="block";
 }
 
-async function guardarEdicion() {
+async function guardarAdmin(){
   const e = adminEducador.value;
   const f = adminFecha.value;
-  if (!e || !f) return alert("Complete datos");
+  if(!e||!f) return alert("Datos incompletos");
 
-  await db.collection("asistencias")
-    .doc(`${e}-${f}`)
-    .set({
-      entrada: formatearHoraAdmin(adminEntrada.value),
-      salida: formatearHoraAdmin(adminSalida.value)
-    }, { merge: true });
+  const data = {
+    entrada: adminEntrada.value,
+    salida: adminSalida.value,
+    estado: adminEstado.value || null
+  };
 
-  alert("Registro actualizado");
+  await db.collection("asistencias").doc(`${e}-${f}`).set(data,{merge:true});
+  alert("Guardado");
 }
 
 /* VER ASISTENCIAS */
-async function verAsistencias() {
-  calendario.innerHTML = "";
-  const educador = educadorSel.value;
-  if (!educador) return alert("Seleccione educador");
+async function verAsistencias(){
+  calendario.innerHTML="";
+  const e = educador.value;
+  const y = +anioSel.value;
+  const m = +mesSel.value;
 
-  const anio = parseInt(anioSel.value);
-  const mes = parseInt(mesSel.value);
+  const snap = await db.collection("asistencias")
+    .where(firebase.firestore.FieldPath.documentId(),">=",e+"-")
+    .where(firebase.firestore.FieldPath.documentId(),"<",e+"-\uf8ff")
+    .get();
 
-  const snapshot = await db.collection("asistencias").get();
   const data = {};
-  snapshot.forEach(doc => data[doc.id] = doc.data());
+  snap.forEach(d=>data[d.id]=d.data());
 
-  const primerDia = new Date(anio, mes, 1);
-  const ultimoDia = new Date(anio, mes + 1, 0).getDate();
-
-  let semana = document.createElement("div");
-  semana.className = "semana";
+  const days = new Date(y,m+1,0).getDate();
+  let semana=document.createElement("div");
+  semana.className="semana";
   calendario.appendChild(semana);
 
-  let offset = (primerDia.getDay() + 1) % 7;
-  for (let i = 0; i < offset; i++) semana.appendChild(document.createElement("div"));
-
-  for (let d = 1; d <= ultimoDia; d++) {
-    const fecha = new Date(anio, mes, d);
-    const key = `${educador}-${fecha.toISOString().split("T")[0]}`;
-    const r = data[key] || {};
-
-    const div = document.createElement("div");
-    div.className = "dia";
-    if ([0,6].includes(fecha.getDay())) div.classList.add("fin-semana");
-    if (r.entrada) div.classList.add("entrada");
-    if (r.salida) div.classList.add("salida");
-
-    div.innerHTML = `<strong>${d}</strong><br>
-      ${r.entrada ? "🟢 " + r.entrada : ""}
-      ${r.salida ? "<br>🔵 " + r.salida : ""}`;
-
+  for(let d=1;d<=days;d++){
+    const date=new Date(y,m,d);
+    const key=`${e}-${date.toISOString().split("T")[0]}`;
+    const r=data[key]||{};
+    const div=document.createElement("div");
+    div.className="dia "+(r.estado||"");
+    div.innerHTML=`<b>${d}</b><br>
+      ${r.estado==="permiso"?"🟠 Permiso":""}
+      ${r.estado==="falta"?"🔴 Falta":""}
+      ${r.estado==="salud"?"🟣 Salud":""}
+      ${!r.estado && r.entrada? "🟢 "+r.entrada:""}
+      ${!r.estado && r.salida? "<br>🔵 "+r.salida:""}`;
     semana.appendChild(div);
-
-    if ((fecha.getDay()+1)%7 === 6 && d !== ultimoDia) {
-      semana = document.createElement("div");
-      semana.className = "semana";
-      calendario.appendChild(semana);
-    }
   }
-}
-
-/* EXCEL */
-async function descargarExcel() {
-  let csv = "Educador,Fecha,Entrada,Salida\n";
-  const snap = await db.collection("asistencias").get();
-
-  snap.forEach(doc => {
-    const id = doc.id;
-    const fecha = id.match(/\d{4}-\d{2}-\d{2}$/)[0];
-    const educador = id.replace("-"+fecha,"");
-    const r = doc.data();
-    csv += `${educador},${fecha},${r.entrada||""},${r.salida||""}\n`;
-  });
-
-  const blob = new Blob([csv], { type: "text/csv" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "asistencias_orquestando.csv";
-  a.click();
 }
 </script>
 
