@@ -90,7 +90,7 @@ select,input,button{padding:10px;margin:6px;}
 <div class="admin-btn" onclick="abrirAdmin()">O</div>
 </div>
 
-<h1>SISTEMA DE ASISTENCIA – ORQUESTANDO</h1>
+<h1>SISTEMA DE ASISTENCIA EDUCADORES– ORQUESTANDO</h1>
 
 <select id="educador">
 <option value="">👤 Seleccione educador</option>
@@ -176,7 +176,7 @@ async function marcar(tipo){
   const pin = document.getElementById("pin").value;
 
   if(!e){
-    return alert("Seleccione educador");
+    return alert("❌ Seleccione educador");
   }
   if(pin !== pines[e]){
     return alert("❌ PIN incorrecto");
