@@ -8,9 +8,6 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
-<!-- 📊 EXCEL XLSX -->
-<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-
 <style>
 body {
   font-family: Arial, sans-serif;
@@ -66,6 +63,7 @@ button { cursor: pointer; }
 
 .fin-semana { background: #ffe0e0; }
 
+/* ✅ CLASES CORREGIDAS */
 .Entrada { border-left: 6px solid green; }
 .Salida { border-left: 6px solid blue; }
 .Permiso { border-left: 6px solid orange; }
@@ -80,6 +78,7 @@ button { cursor: pointer; }
   padding-top: 20px;
 }
 
+/* 🔐 BOTÓN ADMIN */
 .admin-btn {
   position: absolute;
   top: 20px;
@@ -99,6 +98,7 @@ button { cursor: pointer; }
 }
 .admin-btn:hover { opacity: 1; }
 
+/* 🛠 PANEL ADMIN */
 .admin-panel {
   display: none;
   background: #f5f5f5;
@@ -132,6 +132,7 @@ button { cursor: pointer; }
   <button onclick="marcar('entrada')">🟢 Entrada</button>
   <button onclick="marcar('salida')">🔵 Salida</button>
 
+  <!-- 🔧 PANEL ADMIN -->
   <div class="admin-panel" id="adminPanel">
     <h3>🔧 MODO ADMINISTRADOR</h3>
 
@@ -143,6 +144,7 @@ button { cursor: pointer; }
     </select>
 
     <input type="date" id="adminFecha">
+
     <input type="time" id="adminEntrada" step="1">
     <input type="time" id="adminSalida" step="1"><br>
 
@@ -202,6 +204,11 @@ const mesSel = document.getElementById("mes");
 const anioSel = document.getElementById("anio");
 const educadorSel = document.getElementById("educador");
 const calendario = document.getElementById("calendario");
+const adminEducador = document.getElementById("adminEducador");
+const adminFecha = document.getElementById("adminFecha");
+const adminEntrada = document.getElementById("adminEntrada");
+const adminSalida = document.getElementById("adminSalida");
+const adminEstado = document.getElementById("adminEstado");
 
 /* MESES Y AÑOS */
 ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"]
@@ -209,42 +216,115 @@ const calendario = document.getElementById("calendario");
 
 for (let y = 2026; y <= 2035; y++) anioSel.innerHTML += `<option>${y}</option>`;
 
-/* 📥 DESCARGAR EXCEL XLSX */
-async function descargarExcel() {
+/* MARCAR NORMAL */
+async function marcar(tipo) {
   const educador = educadorSel.value;
-  if (!educador) return alert("Seleccione un educador");
+  const pin = document.getElementById("pin").value;
+  if (!educador || pin !== pines[educador]) return alert("Datos incorrectos");
 
-  const anio = anioSel.value;
-  const mes = String(Number(mesSel.value) + 1).padStart(2,"0");
-
-  const snapshot = await db.collection("asistencias").get();
-
-  const datos = [["Educador","Fecha","Entrada","Salida","Estado"]];
-
-  snapshot.forEach(doc => {
-    const id = doc.id;
-    if (id.startsWith(educador)) {
-      const fecha = id.slice(-10);
-      if (fecha.startsWith(`${anio}-${mes}`)) {
-        const d = doc.data();
-        datos.push([
-          educador,
-          fecha,
-          d.entrada || "",
-          d.salida || "",
-          d.estado || ""
-        ]);
-      }
-    }
+  const ahora = new Date();
+  const fecha = ahora.toISOString().split("T")[0];
+  const hora = ahora.toLocaleTimeString("es-PE", {
+    hour: "numeric",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: true
   });
 
-  if (datos.length === 1) return alert("No hay datos");
+  await db.collection("asistencias")
+    .doc(`${educador}-${fecha}`)
+    .set({ [tipo]: hora, estado: null }, { merge: true });
 
-  const hoja = XLSX.utils.aoa_to_sheet(datos);
-  const libro = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(libro, hoja, "Asistencias");
+  alert(`✅ ${tipo} registrada`);
+}
 
-  XLSX.writeFile(libro, `Asistencia_${educador}_${anio}_${mes}.xlsx`);
+/* FORMATO HORA ADMIN */
+function formatearHoraAdmin(h) {
+  if (!h) return "";
+  const [hh,mm,ss="00"] = h.split(":");
+  const d = new Date();
+  d.setHours(hh,mm,ss);
+  return d.toLocaleTimeString("es-PE",{hour:"numeric",minute:"2-digit",second:"2-digit",hour12:true});
+}
+
+/* ADMIN */
+function abrirAdmin() {
+  const pin = prompt("PIN ADMIN");
+  if (pin === PIN_ADMIN)
+    document.getElementById("adminPanel").style.display = "block";
+  else alert("PIN incorrecto");
+}
+
+async function guardarEdicion() {
+  const e = adminEducador.value;
+  const f = adminFecha.value;
+  const estado = adminEstado.value;
+  if (!e || !f) return alert("Complete datos");
+
+  await db.collection("asistencias").doc(`${e}-${f}`).set({
+    entrada: estado ? null : formatearHoraAdmin(adminEntrada.value),
+    salida: estado ? null : formatearHoraAdmin(adminSalida.value),
+    estado: estado || null
+  }, { merge: true });
+
+  alert("Registro actualizado");
+}
+
+/* VER ASISTENCIAS */
+async function verAsistencias() {
+  calendario.innerHTML = "";
+  const educador = educadorSel.value;
+  if (!educador) return alert("Seleccione educador");
+
+  const anio = parseInt(anioSel.value);
+  const mes = parseInt(mesSel.value);
+
+  const snapshot = await db.collection("asistencias").get();
+  const data = {};
+  snapshot.forEach(doc => data[doc.id] = doc.data());
+
+  const primerDia = new Date(anio, mes, 1);
+  const ultimoDia = new Date(anio, mes + 1, 0).getDate();
+
+  let semana = document.createElement("div");
+  semana.className = "semana";
+  calendario.appendChild(semana);
+
+  let offset = (primerDia.getDay() + 1) % 7;
+  for (let i = 0; i < offset; i++) semana.appendChild(document.createElement("div"));
+
+  for (let d = 1; d <= ultimoDia; d++) {
+    const fecha = new Date(anio, mes, d);
+    const key = `${educador}-${fecha.toISOString().split("T")[0]}`;
+    const r = data[key] || {};
+
+    const div = document.createElement("div");
+    div.className = "dia";
+
+    if ([0,6].includes(fecha.getDay())) div.classList.add("fin-semana");
+    if (r.estado) div.classList.add(r.estado.replace(" ", ""));
+    if (r.entrada) div.classList.add("Entrada");
+    if (r.salida) div.classList.add("Salida");
+
+    let texto = "";
+    if (r.estado === "Permiso") texto = "🟠 Permiso";
+    if (r.estado === "Trabajo Remoto") texto = "🟣 Trabajo Remoto";
+    if (r.estado === "Falta") texto = "🔴 Falta injustificada";
+    if (r.estado === "Salud") texto = "🟦 Permiso por salud";
+
+    div.innerHTML = `<strong>${d}</strong><br>
+      ${texto}
+      ${!r.estado && r.entrada ? "<br>🟢 "+r.entrada : ""}
+      ${!r.estado && r.salida ? "<br>🔵 "+r.salida : ""}`;
+
+    semana.appendChild(div);
+
+    if ((fecha.getDay()+1)%7 === 6 && d !== ultimoDia) {
+      semana = document.createElement("div");
+      semana.className = "semana";
+      calendario.appendChild(semana);
+    }
+  }
 }
 </script>
 
