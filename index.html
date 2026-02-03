@@ -8,6 +8,9 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
+<!-- 📊 EXCEL XLSX -->
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
 <style>
 body {
   font-family: Arial, sans-serif;
@@ -215,6 +218,43 @@ const adminEstado = document.getElementById("adminEstado");
 .forEach((m,i)=>mesSel.innerHTML+=`<option value="${i}">${m}</option>`);
 
 for (let y = 2026; y <= 2035; y++) anioSel.innerHTML += `<option>${y}</option>`;
+
+/* 📥 DESCARGAR EXCEL XLSX */
+async function descargarExcel() {
+  const educador = educadorSel.value;
+  if (!educador) return alert("Seleccione un educador");
+
+  const anio = anioSel.value;
+  const mes = String(Number(mesSel.value) + 1).padStart(2,"0");
+
+  const snapshot = await db.collection("asistencias").get();
+
+  const datos = [["Educador","Fecha","Entrada","Salida","Estado"]];
+
+  snapshot.forEach(doc => {
+    const id = doc.id;
+    if (id.startsWith(educador)) {
+      const fecha = id.slice(-10);
+      if (fecha.startsWith(`${anio}-${mes}`)) {
+        const d = doc.data();
+        datos.push([
+          educador,
+          fecha,
+          d.entrada || "",
+          d.salida || "",
+          d.estado || ""
+        ]);
+      }
+    }
+  });
+
+  if (datos.length === 1) return alert("No hay datos");
+
+  const hoja = XLSX.utils.aoa_to_sheet(datos);
+  const libro = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(libro, hoja, "Asistencias");
+
+  XLSX.writeFile(libro, `Asistencia_${educador}_${anio}_${mes}.xlsx`);
 
 /* MARCAR NORMAL */
 async function marcar(tipo) {
