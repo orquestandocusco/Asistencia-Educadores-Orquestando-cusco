@@ -248,25 +248,45 @@ async function verAsistencias(){
 }
 
 async function descargarExcel(){
-  const e=educadorSel.value;
-  if(!e)return;
-  const anio=anioSel.value;
-  const mes=String(+mesSel.value+1).padStart(2,"0");
-  const snap=await db.collection("asistencias").get();
-  const rows=[["Educador","Fecha","Entrada","Salida","Estado"]];
+  const e = educadorSel.value;
+  if(!e) return alert("Seleccione educador");
+
+  const anio = anioSel.value;
+  const mesNum = +mesSel.value; // 0–11
+  const mes = String(mesNum + 1).padStart(2,"0");
+
+  const snap = await db.collection("asistencias").get();
+
+  const rows = [["Educador","Fecha","Día","Entrada","Salida","Estado"]];
+
   snap.forEach(doc=>{
     if(doc.id.startsWith(e)){
-      const fecha=doc.id.slice(-10);
+      const fecha = doc.id.slice(-10); // YYYY-MM-DD
+
       if(fecha.startsWith(`${anio}-${mes}`)){
-        const d=doc.data();
-        rows.push([e,fecha,d.entrada||"",d.salida||"",d.estado||""]);
+        const d = doc.data();
+
+        const fechaObj = new Date(fecha + "T00:00:00");
+        const diaSemana = fechaObj.getDay(); // 0 domingo, 6 sábado
+        const esFinSemana = diaSemana === 0 || diaSemana === 6;
+
+        rows.push([
+          e,
+          fecha,
+          fechaObj.toLocaleDateString("es-PE",{ weekday:"long" }),
+          esFinSemana ? "—" : (d.entrada || ""),
+          esFinSemana ? "—" : (d.salida || ""),
+          esFinSemana ? "Día no laborable" : (d.estado || "")
+        ]);
       }
     }
   });
-  const ws=XLSX.utils.aoa_to_sheet(rows);
-  const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,"Asistencia");
-  XLSX.writeFile(wb,`Asistencia_${e}_${anio}_${mes}.xlsx`);
+
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Asistencia");
+
+  XLSX.writeFile(wb, `Asistencia_${e}_${anio}_${mes}.xlsx`);
 }
 </script>
 </body>
