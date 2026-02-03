@@ -172,9 +172,16 @@ const calendario=document.getElementById("calendario");
 for(let y=2026;y<=2035;y++)anioSel.innerHTML+=`<option>${y}</option>`;
 
 async function marcar(tipo){
-  const e=educadorSel.value;
-  const pin=document.getElementById("pin").value;
-  if(!e||pin!==pines[e])return alert("Seleccione Educador o complete datos");
+  const e = educadorSel.value;
+  const pin = document.getElementById("pin").value;
+
+  if(!e){
+    return alert("Seleccione educador");
+  }
+  if(pin !== pines[e]){
+    return alert("❌ PIN incorrecto");
+  }
+  
   const ahora=new Date();
   const fecha=ahora.toISOString().split("T")[0];
   const hora=ahora.toLocaleTimeString("es-PE",{hour:"numeric",minute:"2-digit",second:"2-digit",hour12:true});
@@ -186,6 +193,8 @@ async function marcar(tipo){
 function abrirAdmin(){
   if(prompt("PIN ADMIN")===PIN_ADMIN)
     document.getElementById("adminPanel").style.display="block";
+  else
+    alert("❌ PIN ADMIN incorrecto");
 }
 
 async function guardarEdicion(){
