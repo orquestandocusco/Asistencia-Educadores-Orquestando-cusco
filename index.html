@@ -206,7 +206,7 @@ async function guardarEdicion(){
 async function verAsistencias(){
   calendario.innerHTML="";
   const e=educadorSel.value;
-  if(!e)return;
+  if(!e) return alert("Seleccione educador y mes");
   const anio=parseInt(anioSel.value);
   const mes=parseInt(mesSel.value);
 
