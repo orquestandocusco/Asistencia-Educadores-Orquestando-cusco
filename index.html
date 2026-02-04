@@ -90,7 +90,7 @@ select,input,button{padding:10px;margin:6px;}
 <div class="admin-btn" onclick="abrirAdmin()">O</div>
 </div>
 
-<h1>ASISTENCIA EDUCADORES – ORQUESTANDO</h1>
+<h1>SISTEMA DE ASISTENCIA – ORQUESTANDO</h1>
 
 <select id="educador">
 <option value="">👤 Seleccione educador</option>
@@ -176,7 +176,7 @@ async function marcar(tipo){
   const pin = document.getElementById("pin").value;
 
   if(!e){
-    return alert("❌ Seleccione educador");
+    return alert("Seleccione educador");
   }
   if(pin !== pines[e]){
     return alert("❌ PIN incorrecto");
@@ -197,21 +197,32 @@ function abrirAdmin(){
     alert("❌ PIN ADMIN incorrecto");
 }
 
+/* 🔧 FORMATO 12 HORAS ADMIN */
+function convertirHora12(h){
+  if(!h) return null;
+  const [hh,mm,ss="00"]=h.split(":");
+  const d=new Date();
+  d.setHours(hh,mm,ss);
+  return d.toLocaleTimeString("es-PE",{hour:"numeric",minute:"2-digit",second:"2-digit",hour12:true});
+}
+
 async function guardarEdicion(){
   const e=document.getElementById("adminEducador").value;
   const f=document.getElementById("adminFecha").value;
   const estado=document.getElementById("adminEstado").value;
   const entrada=document.getElementById("adminEntrada").value;
   const salida=document.getElementById("adminSalida").value;
-  if(!e||!f)return;
+  if(!e||!f) return;
+
   await db.collection("asistencias").doc(`${e}-${f}`).set({
-    entrada:estado?null:entrada,
-    salida:estado?null:salida,
+    entrada:estado?null:convertirHora12(entrada),
+    salida:estado?null:convertirHora12(salida),
     estado:estado||null
   },{merge:true});
+
   alert("Actualizado");
 }
-
+  
 async function verAsistencias(){
   calendario.innerHTML="";
   const e=educadorSel.value;
