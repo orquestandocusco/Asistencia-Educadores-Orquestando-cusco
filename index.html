@@ -51,7 +51,7 @@ select,input,button{padding:10px;margin:6px;}
 .Salida{border-left:6px solid blue;}
 .Permiso{border-left:6px solid orange;}
 .TrabajoRemoto{border-left:6px solid purple;}
-.feriado Calendario{border-left:6px solid green;}
+.Feriado{border-left:6px solid green;}
 .Falta{border-left:6px solid red;}
 .Salud{border-left:6px solid deepskyblue;}
 .calendario-wrapper{
@@ -123,7 +123,7 @@ select,input,button{padding:10px;margin:6px;}
 <option value="">— Estado especial —</option>
 <option value="Permiso">🟠 Permiso</option>
 <option value="Trabajo Remoto">🟣 Trabajo Remoto</option>
-<option value="feriado Calendario">🟢 feriado Calendario</option>
+<option value="Feriado">🟢 Feriado</option>
 <option value="Falta">🔴 Falta injustificada</option>
 <option value="Salud">🟦 Permiso por salud</option>
 </select><br>
@@ -227,47 +227,68 @@ async function guardarEdicion(){
   
 async function verAsistencias(){
   calendario.innerHTML="";
-  const e=educadorSel.value;
+  const e = educadorSel.value;
   if(!e) return alert("Seleccione educador y mes");
-  const anio=parseInt(anioSel.value);
-  const mes=parseInt(mesSel.value);
 
-  const snap=await db.collection("asistencias").get();
-  const data={};
-  snap.forEach(d=>data[d.id]=d.data());
+  const anio = parseInt(anioSel.value);
+  const mes  = parseInt(mesSel.value);
 
-  const primer=new Date(anio,mes,1);
-  const ultimo=new Date(anio,mes+1,0).getDate();
+  const ICONOS_ESTADO = {
+    "Permiso": "🟠",
+    "Trabajo Remoto": "🟣",
+    "Falta": "🔴",
+    "Salud": "🟦",
+    "Feriado": "🟢"
+  };
 
-  let fila=document.createElement("div");
-  fila.className="semana";
+  const snap = await db.collection("asistencias").get();
+  const data = {};
+  snap.forEach(d => data[d.id] = d.data());
+
+  const primer = new Date(anio, mes, 1);
+  const ultimo = new Date(anio, mes + 1, 0).getDate();
+
+  let fila = document.createElement("div");
+  fila.className = "semana";
   calendario.appendChild(fila);
 
-  let offset=(primer.getDay()+1)%7;
-  for(let i=0;i<offset;i++)fila.appendChild(document.createElement("div"));
+  let offset = (primer.getDay() + 1) % 7;
+  for(let i = 0; i < offset; i++){
+    fila.appendChild(document.createElement("div"));
+  }
 
-  for(let d=1;d<=ultimo;d++){
-    const f=new Date(anio,mes,d);
-    const key=`${e}-${f.toISOString().split("T")[0]}`;
-    const r=data[key]||{};
-    const div=document.createElement("div");
-    div.className="dia";
-    if([0,6].includes(f.getDay()))div.classList.add("fin-semana");
-    if(r.estado)div.classList.add(r.estado.replace(" ",""));
-    if(r.entrada)div.classList.add("Entrada");
-    if(r.salida)div.classList.add("Salida");
-    div.innerHTML=`<strong>${d}</strong>
-      ${r.estado?`<br>${r.estado}`:""}
-      ${r.entrada?`<br>🟢 ${r.entrada}`:""}
-      ${r.salida?`<br>🔵 ${r.salida}`:""}`;
+  for(let d = 1; d <= ultimo; d++){
+    const f = new Date(anio, mes, d);
+    const key = `${e}-${f.toISOString().split("T")[0]}`;
+    const r = data[key] || {};
+
+    const div = document.createElement("div");
+    div.className = "dia";
+
+    if([0,6].includes(f.getDay())) div.classList.add("fin-semana");
+    if(r.estado) div.classList.add(r.estado.replace(/\s/g,""));
+    if(r.entrada) div.classList.add("Entrada");
+    if(r.salida) div.classList.add("Salida");
+
+    const iconoEstado = r.estado ? ICONOS_ESTADO[r.estado] || "ℹ️" : "";
+
+    div.innerHTML = `
+      <strong>${d}</strong>
+      ${r.estado ? `<br>${iconoEstado} ${r.estado}` : ""}
+      ${r.entrada ? `<br>🟢 ${r.entrada}` : ""}
+      ${r.salida ? `<br>🔵 ${r.salida}` : ""}
+    `;
+
     fila.appendChild(div);
-    if(f.getDay()===5&&d!==ultimo){
-      fila=document.createElement("div");
-      fila.className="semana";
+
+    if(f.getDay() === 5 && d !== ultimo){
+      fila = document.createElement("div");
+      fila.className = "semana";
       calendario.appendChild(fila);
     }
   }
 }
+
 
 async function descargarExcel(){
   const e = educadorSel.value;
